@@ -1,4 +1,4 @@
-package ledcube.i2c
+package ledcube
 
 import chisel3._
 import chisel3.util._

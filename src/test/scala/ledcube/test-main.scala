@@ -3,7 +3,7 @@
 package ledcube
 
 import chisel3._
-import ledcube.i2c._
+import ledcube._
 
 /**
   * This provides an alternate way to run tests, by executing then as a main

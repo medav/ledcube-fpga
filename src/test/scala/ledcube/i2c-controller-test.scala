@@ -2,7 +2,7 @@
 
 package ledcube
 
-import ledcube.i2c._
+import ledcube._
 
 import chisel3.iotesters
 import chisel3.iotesters.{ChiselFlatSpec, Driver, PeekPokeTester}
