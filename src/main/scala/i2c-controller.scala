@@ -6,8 +6,8 @@ import ledcube.interfaces._
 
 class I2cController(max_packet_size : Int = 16) extends Module {
     val io = IO(new Bundle {
-        val request = Flipped(DecoupledIO(new I2cPacket(max_packet_size)))
         val config = Input(new I2cConfig())
+        val request = Flipped(DecoupledIO(new I2cPacket(max_packet_size)))
         val sda = Output(Bool())
         val sda_fb = Input(Bool())
         val scl = Output(Bool())

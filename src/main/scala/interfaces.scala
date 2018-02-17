@@ -16,3 +16,8 @@ class I2cConfig extends Bundle {
     val clock_threshold = UInt(64.W)
     val clock_period = UInt(64.W)
 }
+
+class TlcConfig extends Bundle {
+    val i2c_config = new I2cConfig()
+    val tlc_address = UInt(8.W)
+}
