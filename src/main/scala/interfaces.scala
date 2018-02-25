@@ -2,6 +2,12 @@ package ledcube.interfaces
 
 import chisel3._
 
+class I2c extends Bundle {
+    val scl = Output(Bool())
+    val scl_fb = Input(Bool())
+    val sda = Output(Bool())
+}
+
 class I2cPacket(max_packet_size : Int = 16) extends Bundle {
     val size = UInt(8.W)
     val address = UInt(8.W)
@@ -19,5 +25,7 @@ class I2cConfig extends Bundle {
 
 class TlcConfig extends Bundle {
     val i2c_config = new I2cConfig()
-    val tlc_address = UInt(8.W)
+    val mode1 = UInt(8.W)
+    val mode2 = UInt(8.W)
+    val iref = UInt(8.W)
 }

@@ -8,14 +8,11 @@ class I2cController(max_packet_size : Int = 16) extends Module {
     val io = IO(new Bundle {
         val config = Input(new I2cConfig())
         val request = Flipped(DecoupledIO(new I2cPacket(max_packet_size)))
-        val sda = Output(Bool())
-        val sda_fb = Input(Bool())
-        val scl = Output(Bool())
+        val i2c = Output(new I2c())
         val error = Output(Bool())
     })
 
     val s_idle :: s_start :: s_write :: s_nack :: s_error :: s_stop :: Nil = Enum(6)
-
     val state = RegInit(s_idle)
 
     val packet = Reg(Vec(max_packet_size + 2, UInt(8.W)))
@@ -42,10 +39,10 @@ class I2cController(max_packet_size : Int = 16) extends Module {
     val SDA_LOW = 1.U
     val SDA_ACTIVE = 2.U
 
-    io.scl := 
+    io.i2c.scl := 
         MuxLookup(scl_state, 1.U, Array(SCL_HIGH -> 1.U, SCL_ACTIVE -> pulse))
 
-    io.sda := 
+    io.i2c.sda := 
         MuxLookup(sda_state, 1.U, 
             Array(SDA_HIGH -> 1.U, SDA_LOW -> 0.U, SDA_ACTIVE -> data_out))
 
@@ -139,7 +136,7 @@ class I2cController(max_packet_size : Int = 16) extends Module {
                 }
             }
 
-            when (rising_edge && io.sda_fb) {
+            when (rising_edge && io.i2c.scl_fb) {
                 state := s_error
             }
         }
