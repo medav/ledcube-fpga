@@ -25,7 +25,7 @@ import ledcube._
   * }}}
   */
 object TestMain extends App {
-  iotesters.Driver.execute(args, () => new I2cController) {
-    c => new I2cControllerUnitTester(c)
+  iotesters.Driver.execute(args, () => new RefreshController) {
+    c => new RefreshControllerUnitTester(c)
   }
 }
