@@ -31,7 +31,7 @@ class RefreshControllerUnitTester(c: RefreshController) extends PeekPokeTester(c
     poke(c.io.i2c2.scl_fb, false)
     poke(c.io.i2c3.scl_fb, false)
 
-    step(2000)
+    step(100000)
 
 }
 

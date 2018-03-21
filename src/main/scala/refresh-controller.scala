@@ -8,17 +8,16 @@ import ledcube.constants.TlcConstants._
 
 class RefreshController(max_packet_size : Int = 16) extends Module {
     val io = IO(new Bundle {
-        val i2c0 = Output(new I2c())
-        val i2c1 = Output(new I2c())
-        val i2c2 = Output(new I2c())
-        val i2c3 = Output(new I2c())
+        val i2c0 = new I2c()
+        val i2c1 = new I2c()
+        val i2c2 = new I2c()
+        val i2c3 = new I2c()
     })
 
     val controllers = 
         Vec(Seq.fill(4){ Module(new TlcController(max_packet_size)).io })
 
     for (i <- 0 until 4) {
-
         controllers(i).config.mode1 := "h11".U
         controllers(i).config.mode2 := "h00".U
         controllers(i).config.iref := "hCF".U

@@ -11,9 +11,7 @@ class TlcController(max_packet_size : Int = 16) extends Module {
         val config = Input(new TlcConfig())
         val update = Input(Bool())
         val ready = Output(Bool())
-
-        val i2c = Output(new I2c())
-
+        val i2c = new I2c()
         val led_state_in = Input(Vec(16, UInt(2.W)))
     })
 
@@ -22,10 +20,9 @@ class TlcController(max_packet_size : Int = 16) extends Module {
 
     val i2c_ctrl = Module(new I2cController(max_packet_size))
     i2c_ctrl.io.config <> io.config.i2c_config
-    // i2c_ctrl.io.i2c.scl_fb := io.i2c.scl_fb
-    io.i2c.sda := i2c_ctrl.io.i2c.sda
-    io.i2c.scl := i2c_ctrl.io.i2c.scl
 
+    io.i2c.sda <> i2c_ctrl.io.i2c.sda
+    io.i2c.scl <> i2c_ctrl.io.i2c.scl
     io.i2c.resetn := true.B
 
     // Default values for request packet
@@ -34,8 +31,11 @@ class TlcController(max_packet_size : Int = 16) extends Module {
     i2c_ctrl.io.request.bits.address := 0.U
     i2c_ctrl.io.request.bits.header := 0.U
 
+    // Default value for ready signal
+    io.ready := false.B
+
     for (i <- 0 until max_packet_size) {
-        i2c_ctrl.io.request.bits.payload(0) := 0.U
+        i2c_ctrl.io.request.bits.payload(i) := 0.U
     }
 
     when (i2c_ctrl.io.error) {

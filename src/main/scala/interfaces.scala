@@ -2,11 +2,15 @@ package ledcube.interfaces
 
 import chisel3._
 
+class PullDownPin extends Bundle {
+    val out = Output(Bool())
+    val in = Input(Bool())
+}
+
 class I2c extends Bundle {
-    val scl = Bool()
-    val scl_fb = Flipped(Bool())
-    val sda = Bool()
-    val resetn = Bool()
+    val sda = new PullDownPin()
+    val scl = new PullDownPin()
+    val resetn = Output(Bool())
 }
 
 class I2cPacket(max_packet_size : Int = 16) extends Bundle {

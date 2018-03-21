@@ -8,7 +8,7 @@ class I2cController(max_packet_size : Int = 16) extends Module {
     val io = IO(new Bundle {
         val config = Input(new I2cConfig())
         val request = Flipped(DecoupledIO(new I2cPacket(max_packet_size)))
-        val i2c = Output(new I2c())
+        val i2c = new I2c()
         val error = Output(Bool())
     })
 
@@ -39,10 +39,12 @@ class I2cController(max_packet_size : Int = 16) extends Module {
     val SDA_LOW = 1.U
     val SDA_ACTIVE = 2.U
 
-    io.i2c.scl := 
+    io.i2c.resetn := true.B
+
+    io.i2c.scl.out := 
         MuxLookup(scl_state, 1.U, Array(SCL_HIGH -> 1.U, SCL_ACTIVE -> pulse))
 
-    io.i2c.sda := 
+    io.i2c.sda.out := 
         MuxLookup(sda_state, 1.U, 
             Array(SDA_HIGH -> 1.U, SDA_LOW -> 0.U, SDA_ACTIVE -> data_out))
 
@@ -107,7 +109,16 @@ class I2cController(max_packet_size : Int = 16) extends Module {
             sda_state := SDA_ACTIVE
             scl_state := SCL_ACTIVE
 
-            when (beat_finished) {
+
+            // When the clock is to be asserted (signaling the latching of sda
+            // by the slave) the slave might hold scl to ground to to indicate
+            // it can't accept the data yet (clock stretching). In this case,
+            // clock_counter simply holds its value until the slave releases
+            // the clock.
+            when (pulse && !io.i2c.scl.in) {
+                clock_counter := clock_counter
+            }
+            .elsewhen (beat_finished) {
                 clock_counter := 0.U
 
                 when (beat_counter === 8.U) {
@@ -136,7 +147,7 @@ class I2cController(max_packet_size : Int = 16) extends Module {
                 }
             }
 
-            when (rising_edge && io.i2c.scl_fb) {
+            when (rising_edge && io.i2c.sda.in) {
                 state := s_error
             }
         }
@@ -144,10 +155,16 @@ class I2cController(max_packet_size : Int = 16) extends Module {
             io.error := true.B
         }
         is (s_stop) {
-            sda_state := SDA_LOW
             scl_state := SCL_HIGH
 
             when (pulse) {
+                sda_state := SDA_HIGH
+            }
+            .otherwise {
+                sda_state := SDA_LOW
+            }
+
+            when (beat_finished) {
                 state := s_idle
             }
         }
