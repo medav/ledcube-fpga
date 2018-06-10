@@ -16,14 +16,14 @@ class I2cController(max_packet_size : Int = 16) extends Module {
     val state = RegInit(s_idle)
 
     val packet = Reg(Vec(max_packet_size + 2, UInt(8.W)))
-    val packet_size = Reg(UInt(8.W))
+    val packet_size = RegInit(0.U(8.W))
 
     val sda_state = Wire(UInt())
     val scl_state = Wire(UInt())
 
-    val clock_counter = Reg(UInt(64.W))
-    val beat_counter = Reg(UInt(64.W))
-    val data_counter = Reg(UInt(64.W))
+    val clock_counter = RegInit(0.U(16.W))
+    val beat_counter = RegInit(0.U(16.W))
+    val data_counter = RegInit(0.U(16.W))
 
     val pulse = clock_counter >= io.config.clock_threshold
     val rising_edge = clock_counter === io.config.clock_threshold
@@ -57,7 +57,7 @@ class I2cController(max_packet_size : Int = 16) extends Module {
 
     io.request.ready := false.B
     io.error := false.B
-    data_out := data_reg(beat_counter)
+    data_out := data_reg(7.U - beat_counter)
     clock_counter := clock_counter + 1.U
 
     //
@@ -71,12 +71,12 @@ class I2cController(max_packet_size : Int = 16) extends Module {
             scl_state := SCL_HIGH
 
             // Can accept a new request here.
-            io.request.ready := true.B
+            io.request.ready := pulse
 
             when (io.request.fire()) {
                 state := s_start
 
-                packet_size := io.request.bits.size
+                packet_size := io.request.bits.size + 2.U
 
                 data_counter := 0.U
                 clock_counter := 0.U
@@ -121,7 +121,7 @@ class I2cController(max_packet_size : Int = 16) extends Module {
             .elsewhen (beat_finished) {
                 clock_counter := 0.U
 
-                when (beat_counter === 8.U) {
+                when (beat_counter === 7.U) {
                     beat_counter := 0.U
                     state := s_nack
                 }
@@ -155,17 +155,12 @@ class I2cController(max_packet_size : Int = 16) extends Module {
             io.error := true.B
         }
         is (s_stop) {
-            scl_state := SCL_HIGH
-
-            when (pulse) {
-                sda_state := SDA_HIGH
-            }
-            .otherwise {
-                sda_state := SDA_LOW
-            }
+            scl_state := SCL_ACTIVE
+            sda_state := SDA_LOW
 
             when (beat_finished) {
                 state := s_idle
+                clock_counter := 0.U
             }
         }
     }

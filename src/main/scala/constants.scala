@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 
 object TlcConstants {
-    val ALLCALLADDR = "h08".U(8.W)
+    val ALLCALLADDR = "h68".U(8.W)
 
     val AUTOINC_NONE = "h00".U(8.W)
     val AUTOINC_ALL = "h80".U(8.W)
