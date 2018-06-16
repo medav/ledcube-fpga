@@ -34,7 +34,7 @@ class I2cController(max_packet_size : Int = 16) extends Module {
     //
 
     // Counts actual cycles in the current beat.
-    val clock_counter = RegInit(0.U(16.W))
+    val clock_counter = RegInit(0.U(32.W))
 
     // Tracks which beat this module is on. This is used to select which bit of
     // the current output byte is to be written to SDA.
@@ -87,7 +87,9 @@ class I2cController(max_packet_size : Int = 16) extends Module {
         MuxLookup(scl_state, 1.U, Array(SCL_HIGH -> 1.U, SCL_ACTIVE -> pulse))
 
     io.i2c.sda.out :=
-        MuxLookup(sda_state, 1.U,
+        MuxLookup(
+            sda_state, 
+            1.U,
             Array(SDA_HIGH -> 1.U, SDA_LOW -> 0.U, SDA_ACTIVE -> data_out))
 
     //

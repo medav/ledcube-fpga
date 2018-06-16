@@ -9,19 +9,18 @@ import ledcube.constants.TlcConstants._
 class TlcController() extends Module {
     val io = IO(new Bundle {
         val config = Input(new TlcConfig())
+        val clear = Input(Bool())
         val update = Input(Bool())
         val ready = Output(Bool())
         val i2c = new I2c()
         val led_state_in = Input(Vec(16, UInt(8.W)))
     })
 
-    val s_reset :: s_setup_mode :: s_setup_iref :: s_clear :: s_update :: s_enable :: s_error :: Nil = Enum(7)
-
+    val s_reset :: s_setup_mode :: s_setup_iref :: s_ready :: s_clear :: s_update :: s_enable :: s_error :: Nil = Enum(8)
     val state = RegInit(s_reset)
 
     val i2c_ctrl = Module(new I2cController(16))
     i2c_ctrl.io.config <> io.config.i2c_config
-
     io.i2c.sda <> i2c_ctrl.io.i2c.sda
     io.i2c.scl <> i2c_ctrl.io.i2c.scl
     io.i2c.resetn := true.B
@@ -96,20 +95,36 @@ class TlcController() extends Module {
                 ALLCALLADDR,
                 WRITE,
                 AUTOINC_ALL | TlcRegisters.MODE1,
-                s_clear)
+                s_ready)
 
             i2c_ctrl.io.request.valid := true.B
             i2c_ctrl.io.request.bits.payload(0) := io.config.iref
         }
 
+        is (s_ready) {
+
+            //
+            // In this state, wait for either a clear or update request.
+            //
+            // N.B. This state delays all commands by one FPGA cycle, but
+            // overall this is 1 / 50,000,000 second extra per command so nbd.
+            //
+
+            io.ready := true.B
+
+            when (io.clear) {
+                state := s_clear
+            }
+            .elsewhen (io.update) {
+                state := s_update
+            }
+        }
+
         is (s_clear) {
 
             //
-            // In this state, the controller waits for an update signal. When
-            // that signal is received, a command is sent to the i2c controller
-            // to clear the current state of the LEDs. After that, the following
-            // states (s_update and s_enable) will transmit new brightness data
-            // to the TLC and enable the output.
+            // In this state, make a request to clear all the led output
+            // registers to turn off all LEDs.
             //
 
             MakeRequest(
@@ -117,10 +132,9 @@ class TlcController() extends Module {
                 ALLCALLADDR,
                 WRITE,
                 AUTOINC_ALL | TlcRegisters.LEDOUT0,
-                s_update)
+                s_ready)
 
-            i2c_ctrl.io.request.valid := io.update
-            io.ready := i2c_ctrl.io.request.ready
+            i2c_ctrl.io.request.valid := true.B
 
             for (i <- 0 until 4) {
                 i2c_ctrl.io.request.bits.payload(i) := 0.U
@@ -161,7 +175,7 @@ class TlcController() extends Module {
                 ALLCALLADDR,
                 WRITE,
                 AUTOINC_ALL | TlcRegisters.LEDOUT0,
-                s_clear)
+                s_ready)
 
             i2c_ctrl.io.request.valid := true.B
 

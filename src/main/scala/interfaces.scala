@@ -1,6 +1,7 @@
 package ledcube.interfaces
 
 import chisel3._
+import chisel3.util._
 
 class PullDownPin extends Bundle {
     val out = Output(Bool())
@@ -11,6 +12,15 @@ class I2c extends Bundle {
     val sda = new PullDownPin()
     val scl = new PullDownPin()
     val resetn = Output(Bool())
+}
+
+class BramReadInterface(bram_size : Int = 512) extends Bundle {
+    val address = Output(UInt(log2Ceil(bram_size).W))
+    val read = Output(Bool())
+    val data = Input(UInt(8.W))
+
+    override def cloneType(): this.type = 
+        (new BramReadInterface(bram_size)).asInstanceOf[this.type]
 }
 
 class I2cPacket(max_packet_size : Int = 16) extends Bundle {
@@ -24,8 +34,8 @@ class I2cPacket(max_packet_size : Int = 16) extends Bundle {
 }
 
 class I2cConfig extends Bundle {
-    val clock_threshold = UInt(64.W)
-    val clock_period = UInt(64.W)
+    val clock_threshold = UInt(32.W)
+    val clock_period = UInt(32.W)
 }
 
 class TlcConfig extends Bundle {
@@ -33,4 +43,9 @@ class TlcConfig extends Bundle {
     val mode1 = UInt(8.W)
     val mode2 = UInt(8.W)
     val iref = UInt(8.W)
+}
+
+class RefreshConfig extends Bundle {
+    val tlc_config = new TlcConfig()
+    val display_cycles = UInt(32.W)
 }
