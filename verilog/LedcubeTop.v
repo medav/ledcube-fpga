@@ -36,6 +36,15 @@ module LedcubeTop(
     wire  io_i2c3_scl_in;
     wire  io_i2c3_resetn;
 
+    wire ram_write;
+    wire [8 : 0] ram_address;
+    wire [7 : 0] ram_data_in;
+    wire [7 : 0] ram_data_out;
+
+    assign ram_write = 0;
+    assign ram_address = 0;
+    assign ram_data_in = 0;
+
     assign i2c0_sda = io_i2c0_sda_out ? 1'bZ : 1'b0;
     assign io_i2c0_sda_in = i2c0_sda;
     assign i2c0_scl = io_i2c0_scl_out ? 1'bZ : 1'b0;
@@ -59,6 +68,14 @@ module LedcubeTop(
     assign i2c3_scl = io_i2c3_scl_out ? 1'bZ : 1'b0;
     assign io_i2c3_scl_in = i2c3_scl;
     assign i2c3_resetn = io_i2c3_resetn;
+
+    block_mem ram(
+        clock,
+        ram_write,
+        ram_address,
+        ram_data_in,
+        ram_data_out
+    );
 
     RefreshController rc(
         clock,
