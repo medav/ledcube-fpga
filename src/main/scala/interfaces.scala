@@ -16,7 +16,6 @@ class I2c extends Bundle {
 
 class BramReadInterface(bram_size : Int = 512) extends Bundle {
     val address = Output(UInt(log2Ceil(bram_size).W))
-    val read = Output(Bool())
     val data = Input(UInt(8.W))
 
     override def cloneType(): this.type =

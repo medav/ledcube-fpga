@@ -21,7 +21,9 @@ class MemReader(cube_size : Int = 8) extends Module {
     val led_state = Reg(Vec(layer_size, UInt(8.W)))
     val read_counter = RegInit(0.U)
     val base_address = RegInit(0.U)
-    val done = WireInit(false.B)
+    val done = RegInit(false.B)
+    val capture_read = RegInit(false.B)
+    val capture_counter = RegNext(read_counter)
 
     //
     // Start overrides the current read cycle. It is assumed that whatever
@@ -30,6 +32,7 @@ class MemReader(cube_size : Int = 8) extends Module {
 
     when (io.start) {
         read_counter := 0.U
+        done := false.B
 
         //
         // The following code will effectively instantiate a lookup table of
@@ -50,17 +53,22 @@ class MemReader(cube_size : Int = 8) extends Module {
     // read, this module will always be actively reading an address.
     //
 
+    capture_read := false.B
     io.bram_read.address := base_address + read_counter
-    io.bram_read.read := !done
-    led_state(read_counter) := io.bram_read.data
-
-    done := (read_counter === layer_size.U)
 
     when (!done) {
+        capture_read := read_counter < layer_size.U
         read_counter := read_counter + 1.U
+
+        when (read_counter === layer_size.U) {
+            done := true.B
+        }
+    }
+
+    when (capture_read) {
+        led_state(capture_counter) := io.bram_read.data
     }
 
     io.done := done
-
     io.led_state_out := led_state
 }

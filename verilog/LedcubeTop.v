@@ -12,7 +12,10 @@ module LedcubeTop(
     output i2c2_resetn,
     inout i2c3_sda,
     inout i2c3_scl,
-    output i2c3_resetn
+    output i2c3_resetn,
+    output [7:0] layer_active,
+    input uart_rx,
+    output uart_tx
 );
 
     wire  io_i2c0_sda_out;
@@ -36,14 +39,11 @@ module LedcubeTop(
     wire  io_i2c3_scl_in;
     wire  io_i2c3_resetn;
 
-    wire ram_write;
-    wire [8 : 0] ram_address;
-    wire [7 : 0] ram_data_in;
-    wire [7 : 0] ram_data_out;
-
-    assign ram_write = 0;
-    assign ram_address = 0;
-    assign ram_data_in = 0;
+    wire [0:0] bram_write_enable;
+    wire [8:0] bram_write_addr;
+    wire [7:0] bram_write_data;
+    wire [8:0] bram_read_addr;
+    wire [7:0] bram_read_data;
 
     assign i2c0_sda = io_i2c0_sda_out ? 1'bZ : 1'b0;
     assign io_i2c0_sda_in = i2c0_sda;
@@ -69,15 +69,17 @@ module LedcubeTop(
     assign io_i2c3_scl_in = i2c3_scl;
     assign i2c3_resetn = io_i2c3_resetn;
 
-    block_mem ram(
+    block_mem bram(
         clock,
-        ram_write,
-        ram_address,
-        ram_data_in,
-        ram_data_out
+        bram_write_enable,
+        bram_write_addr,
+        bram_write_data,
+        clock,
+        bram_read_addr,
+        bram_read_data
     );
 
-    RefreshController rc(
+    LedCubeController lcc(
         clock,
         reset,
         io_i2c0_sda_out,
@@ -99,7 +101,15 @@ module LedcubeTop(
         io_i2c3_sda_in,
         io_i2c3_scl_out,
         io_i2c3_scl_in,
-        io_i2c3_resetn
+        io_i2c3_resetn,
+        layer_active,
+        uart_tx,
+        uart_rx,
+        bram_read_addr,
+        bram_read_data,
+        bram_write_addr,
+        bram_write_enable,
+        bram_write_data
     );
-
+    
 endmodule
