@@ -19,8 +19,23 @@ class BramReadInterface(bram_size : Int = 512) extends Bundle {
     val read = Output(Bool())
     val data = Input(UInt(8.W))
 
-    override def cloneType(): this.type = 
+    override def cloneType(): this.type =
         (new BramReadInterface(bram_size)).asInstanceOf[this.type]
+}
+
+class BramWriteInterface(bram_size : Int = 512) extends Bundle {
+    val address = Output(UInt(log2Ceil(bram_size).W))
+    val write = Output(Bool())
+    val data = Output(UInt(8.W))
+
+    override def cloneType(): this.type =
+        (new BramWriteInterface(bram_size)).asInstanceOf[this.type]
+}
+
+class CsrWriteInterface() extends Bundle {
+    val address = Output(UInt(8.W))
+    val data = Output(UInt(32.W))
+    val write = Output(Bool())
 }
 
 class I2cPacket(max_packet_size : Int = 16) extends Bundle {
@@ -29,7 +44,7 @@ class I2cPacket(max_packet_size : Int = 16) extends Bundle {
     val header = UInt(8.W)
     val payload = Vec(max_packet_size, UInt(8.W))
 
-    override def cloneType(): this.type = 
+    override def cloneType(): this.type =
         (new I2cPacket(max_packet_size)).asInstanceOf[this.type]
 }
 

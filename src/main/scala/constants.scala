@@ -15,6 +15,18 @@ object TlcConstants {
     val WRITE = false.B
 }
 
+object CommConstants {
+
+    //
+    // N.B. These are purposefully chosen to be "complex" bit patterns so
+    // there's less change of a random garbage byte coming in through the UART
+    // that could match.
+    //
+
+    val OP_CSRW = "hA0".U(8.W)
+    val OP_READFRAME = "hA1".U(8.W)
+}
+
 object TlcRegisters {
     val MODE1 = 0.U(8.W)
     val MODE2 = 1.U(8.W)

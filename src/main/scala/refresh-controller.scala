@@ -18,7 +18,7 @@ class RefreshController(
         val config = Input(new RefreshConfig())
         val i2c_interfaces = Vec(num_controllers, new I2c)
         val layer_active = Output(UInt(cube_size.W))
-        val bram = new BramReadInterface(bram_size)
+        val bram_read = new BramReadInterface(bram_size)
     })
 
     //
@@ -44,7 +44,7 @@ class RefreshController(
 
     next_layer := layer_counter + 1.U
 
-    io.bram <> reader.bram
+    io.bram_read <> reader.bram_read
     reader.start := false.B
     reader.layer := next_layer
 

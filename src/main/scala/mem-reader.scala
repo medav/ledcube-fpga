@@ -11,7 +11,7 @@ class MemReader(cube_size : Int = 8) extends Module {
     val layer_size = cube_size * cube_size
 
     val io = IO(new Bundle {
-        val bram = new BramReadInterface(bram_size)
+        val bram_read = new BramReadInterface(bram_size)
         val start = Input(Bool())
         val layer = Input(UInt(log2Ceil(cube_size).W))
         val led_state_out = Output(Vec(layer_size, UInt(8.W)))
@@ -30,9 +30,9 @@ class MemReader(cube_size : Int = 8) extends Module {
 
     when (io.start) {
         read_counter := 0.U
-        
+
         //
-        // The following code will effectively instantiate a lookup table of 
+        // The following code will effectively instantiate a lookup table of
         // constant offsets to use for the start address of the read. This
         // should work fine since cube_size is assumed to be relatively small.
         //
@@ -50,8 +50,9 @@ class MemReader(cube_size : Int = 8) extends Module {
     // read, this module will always be actively reading an address.
     //
 
-    io.bram.address := base_address + read_counter
-    io.bram.read := !done
+    io.bram_read.address := base_address + read_counter
+    io.bram_read.read := !done
+    led_state(read_counter) := io.bram_read.data
 
     done := (read_counter === layer_size.U)
 
