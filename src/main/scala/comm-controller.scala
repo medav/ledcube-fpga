@@ -19,10 +19,12 @@ class CommController(cube_size : Int = 8) extends Module {
     val s_idle :: s_read_cmd :: s_csrw :: s_readframe :: Nil = Enum(4)
     val state = RegInit(s_idle)
     val uart_receiver = Module(new UartReceiver).io
+    val uart_transmitter = Module(new UartTransmitter).io
     val data_in = WireInit(0.U(8.W))
     val read_counter = RegInit(0.U(32.W))
     val csr_addr = RegInit(0.U(8.W))
     val csr_value = RegInit(Vec(Seq.fill(3){ 0.U(8) }))
+    val receiver_dequeue = WireInit(true.B)
 
     //
     // Interface defaults
@@ -38,15 +40,17 @@ class CommController(cube_size : Int = 8) extends Module {
     io.bram_write.data := data_in
     io.bram_write.write := false.B
 
-    io.uart_tx := true.B
+    io.uart_tx := uart_transmitter.uart_tx
 
     //
     // Internal defaults
     //
 
     uart_receiver.uart_rx := io.uart_rx
-    uart_receiver.dequeue := false.B
+    uart_receiver.dequeue := receiver_dequeue
     data_in := uart_receiver.dequeue_data
+    uart_transmitter.enqueue := false.B
+    uart_transmitter.enqueue_data := data_in
 
     //
     // Unless overridden in the FSM logic, it is assumed that every byte will
@@ -54,8 +58,15 @@ class CommController(cube_size : Int = 8) extends Module {
     // data_available.
     //
 
-    when (uart_receiver.data_available) {
+    when (uart_receiver.data_available & receiver_dequeue) {
         read_counter := read_counter + 1.U
+
+        //
+        // For now, the uart tx side will just echo any bytes that come in for
+        // the sake of verifying things actually work.
+        //
+
+        uart_transmitter.enqueue := true.B
     }
 
     //
@@ -70,8 +81,6 @@ class CommController(cube_size : Int = 8) extends Module {
             // opcodes are exactly 1 byte and will cause this module to
             // transition to the corresponding state to handle that command.
             //
-
-            uart_receiver.dequeue := true.B
 
             when (uart_receiver.data_available) {
                 read_counter := 0.U
@@ -105,8 +114,6 @@ class CommController(cube_size : Int = 8) extends Module {
             // performance significantly.
             //
 
-            uart_receiver.dequeue := true.B
-
             when (uart_receiver.data_available) {
                 when (read_counter === 0.U) {
                     csr_addr := data_in
@@ -139,7 +146,6 @@ class CommController(cube_size : Int = 8) extends Module {
             // second.
             //
 
-            uart_receiver.dequeue := true.B
             io.bram_write.write := uart_receiver.data_available
 
             when ((read_counter === (bram_size - 1).U) &
